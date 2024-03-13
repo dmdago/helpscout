@@ -4,13 +4,13 @@ const jwt = require('jsonwebtoken')
 const app = express()
 const port = 3000
 
-const docsSiteUrl = 'https://restricted-docs-example-site.helpscoutdocs.com'
-const sharedSecret = 'pQKpsnVo3TS7efPYC9FcSRoCCyB3aI+MYpI+omktNzE='
+const docsSiteUrl = 'ENTER BASE URL FOR YOUR RESTRICTED DOCS SITE'
+const sharedSecret = 'ENTER SHARED SECRET HERE'
 
 const isValidCredentials = (email, password) => {
     // Here you can integrate into your user backend to validate the credentials
     // For now we just do a simple implementation to show the flow
-    return email === 'a' && password === 'a'
+    return email === 'john@example.com' && password === '12345678'
 }
 
 const createToken = email => {
@@ -32,10 +32,7 @@ app.use(express.urlencoded({extended: true}))
 app.get('/signin', (req, res) => {
     // Help Scout will always include the path that the visitor was requesting
     // as a query parameter
-    
-    //const returnTo = req.query.returnTo
-    const returnTo = 'https://restricted-docs-example-site.helpscoutdocs.com/'
-    console.log(returnTo)
+    const returnTo = req.query.returnTo
 
     // This could be a redirect to your already existing login page
     // In this example we render a simple HTML sign in page
@@ -44,7 +41,7 @@ app.get('/signin', (req, res) => {
             <head><title>Sign in</title></head>
             <body>
                 <form method="post" action="/signin">
-                    <input type="hidden" name="returnTo" value="https://restricted-docs-example-site.helpscoutdocs.com/" />
+                    <input type="hidden" name="returnTo" value="${returnTo}" />
                     <p>
                         Email:<br />
                         <input type="text" name="email" required />
@@ -64,8 +61,7 @@ app.get('/signin', (req, res) => {
 
 app.post('/signin', (req, res) => {
 
-    //const returnTo = req.body.returnTo
-    const returnTo = 'https://restricted-docs-example-site.helpscoutdocs.com/'
+    const returnTo = req.body.returnTo
     const email = req.body.email
     const password = req.body.password
 
@@ -73,9 +69,6 @@ app.post('/signin', (req, res) => {
         const token = createToken(email)
 
         const redirectUrl = `${docsSiteUrl.replace(/\/+$/, '')}/authcallback?token=${token}&returnTo=${returnTo}`
-        //const redirectUrl = `/redireccionado`
-
-        console.log(redirectUrl);
         res.redirect(redirectUrl)
     } else {
 
