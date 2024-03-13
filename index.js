@@ -1,0 +1,92 @@
+const express = require('express')
+const jwt = require('jsonwebtoken')
+
+const app = express()
+const port = 3000
+
+const docsSiteUrl = 'https://restricted-docs-example-site.helpscoutdocs.com'
+const sharedSecret = 'pQKpsnVo3TS7efPYC9FcSRoCCyB3aI+MYpI+omktNzE='
+
+const isValidCredentials = (email, password) => {
+    // Here you can integrate into your user backend to validate the credentials
+    // For now we just do a simple implementation to show the flow
+    return email === 'a' && password === 'a'
+}
+
+const createToken = email => {
+    const tokenPayload = {
+        // Expires in 1 minute, resulting in a new call to /signin
+        // In real life you probably want to have longer expiration
+        exp: Math.floor(Date.now() / 1000) + (60),
+        sub: email,
+    }
+
+    // Create signed JSON Web Token
+    return jwt.sign(tokenPayload,
+                    sharedSecret,
+                    {algorithm: 'HS512'})
+}
+
+app.use(express.urlencoded({extended: true}))
+
+app.get('/signin', (req, res) => {
+    // Help Scout will always include the path that the visitor was requesting
+    // as a query parameter
+    
+    //const returnTo = req.query.returnTo
+    const returnTo = 'https://restricted-docs-example-site.helpscoutdocs.com/'
+    console.log(returnTo)
+
+    // This could be a redirect to your already existing login page
+    // In this example we render a simple HTML sign in page
+    res.send(`
+        <html>
+            <head><title>Sign in</title></head>
+            <body>
+                <form method="post" action="/signin">
+                    <input type="hidden" name="returnTo" value="https://restricted-docs-example-site.helpscoutdocs.com/" />
+                    <p>
+                        Email:<br />
+                        <input type="text" name="email" required />
+                    </p>
+                    <p>
+                        Password:<br />
+                        <input type="password" name="password" required />
+                    </p>
+                    <p>
+                        <input type="submit" value="Sign in" />
+                    </p>
+                </form>
+            </body>
+        </html>
+    `)
+})
+
+app.post('/signin', (req, res) => {
+
+    //const returnTo = req.body.returnTo
+    const returnTo = 'https://restricted-docs-example-site.helpscoutdocs.com/'
+    const email = req.body.email
+    const password = req.body.password
+
+    if (isValidCredentials(email, password)) {
+        const token = createToken(email)
+
+        const redirectUrl = `${docsSiteUrl.replace(/\/+$/, '')}/authcallback?token=${token}&returnTo=${returnTo}`
+        //const redirectUrl = `/redireccionado`
+
+        console.log(redirectUrl);
+        res.redirect(redirectUrl)
+    } else {
+
+        res.send(`
+            <html>
+                <body><p>Invalid email and password, got back and try again. (Psst, it's actually "john@example.com" and "12345678" but don't tell anyone!)</p></body>
+            </html>
+        `)
+    }
+})
+
+app.listen(port, () => {
+    console.log(`Server listening on port ${port}`)
+})
